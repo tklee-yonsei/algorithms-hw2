@@ -64,29 +64,30 @@ class HashTableBasicTests(unittest.TestCase):
 
 
 class HashTableCollisionTests(unittest.TestCase):
-    def test_keys_with_same_slot_are_all_retrievable(self):
-        # "a" (97), "i" (105), "q" (113) all hash to slot 1 when capacity is 8.
+    def test_colliding_keys_are_stored_in_the_same_chain(self):
         keys = ["a", "i", "q"]
-        self.assertEqual({horner_hash(k, 8) for k in keys}, {1})
+        self.assertEqual({horner_hash(key, 8) for key in keys}, {1})
         table = HashTable()
         for key in keys:
             table.put(key, key.upper())
+
+        chain = list(table.slots())[1][1]
+        self.assertEqual({key for key, _ in chain}, set(keys))
         for key in keys:
             with self.subTest(key=key):
                 self.assertEqual(table.get(key), key.upper())
 
-    def test_probing_wraps_from_last_slot_to_first(self):
-        # "g" (103) and "o" (111) both hash to slot 7 when capacity is 8,
-        # so the second one has to wrap around to slot 0.
-        self.assertEqual(horner_hash("g", 8), 7)
-        self.assertEqual(horner_hash("o", 8), 7)
+    def test_chain_lookup_checks_only_nodes_in_the_bucket(self):
         table = HashTable()
-        table.put("g", "first")
-        table.put("o", "second")
-        self.assertEqual(table.get("g"), "first")
-        self.assertEqual(table.get("o"), "second")
+        table.put("a", 1)
+        table.put("i", 2)
+        table.put("q", 3)
+        self.assertEqual(table.comparison_count("q"), 1)
+        self.assertEqual(table.comparison_count("i"), 2)
+        self.assertEqual(table.comparison_count("a"), 3)
+        self.assertEqual(table.comparison_count("y"), 3)
 
-    def test_updating_a_probed_key_changes_only_that_key(self):
+    def test_updating_a_chained_key_changes_only_that_key(self):
         table = HashTable()
         table.put("a", "1")
         table.put("i", "2")
@@ -95,7 +96,7 @@ class HashTableCollisionTests(unittest.TestCase):
         self.assertEqual(table.get("i"), "3")
         self.assertEqual(len(table), 2)
 
-    def test_missing_key_that_collides_with_stored_keys_is_not_found(self):
+    def test_missing_key_in_a_nonempty_chain_is_not_found(self):
         table = HashTable()
         table.put("a", "1")
         table.put("i", "2")
@@ -134,13 +135,14 @@ class HashTableResizeTests(unittest.TestCase):
             with self.subTest(key=key):
                 self.assertEqual(table.get(key), index)
 
-    def test_collisions_still_resolve_after_expansion(self):
+    def test_colliding_entries_remain_in_chains_after_expansion(self):
         table = HashTable()
-        for key in ("a", "i", "q", "g", "o"):
+        keys = ("a", "i", "q", "g", "o")
+        for key in keys:
             table.put(key, key)
         table.put("z", "z")  # sixth entry forces expansion
         self.assertEqual(table.capacity, 16)
-        for key in ("a", "i", "q", "g", "o", "z"):
+        for key in (*keys, "z"):
             with self.subTest(key=key):
                 self.assertEqual(table.get(key), key)
 
@@ -159,17 +161,15 @@ class HashTableIterationTests(unittest.TestCase):
 
 
 class HashTableFixedSizeTests(unittest.TestCase):
-    def test_full_fixed_table_terminates(self):
+    def test_collision_chain_can_grow_without_resizing_the_bucket_array(self):
         table = HashTable(capacity=3, max_load=None)
-        for key in ("a", "b", "c"):
-            table.put(key, 1)
-        with self.assertRaises(OverflowError):
-            table.put("d", 1)
-        with self.assertRaises(KeyError):
-            table.get("d")
-        self.assertEqual(table.probe_count("d"), 3)
-        table.put("a", 2)
-        self.assertEqual(table.get("a"), 2)
+        for key in ("a", "d", "g", "j"):
+            table.put(key, key)
+        self.assertEqual(table.capacity, 3)
+        self.assertEqual(len(table), 4)
+        for key in ("a", "d", "g", "j"):
+            with self.subTest(key=key):
+                self.assertEqual(table.get(key), key)
 
 
 if __name__ == "__main__":

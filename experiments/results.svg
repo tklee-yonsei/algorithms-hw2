@@ -1,20 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="460" viewBox="0 0 720 460" font-family="sans-serif" font-size="12">
 <rect width="720" height="460" fill="white"/>
-<text x="360.0" y="28" text-anchor="middle" font-size="16">Linear probing: average probes vs load factor</text>
+<text x="360.0" y="28" text-anchor="middle" font-size="16">Separate chaining: average comparisons vs load factor</text>
 <line x1="70" y1="390.0" x2="690" y2="390.0" stroke="#ddd"/>
-<text x="62" y="394.0" text-anchor="end">0</text>
-<line x1="70" y1="333.3" x2="690" y2="333.3" stroke="#ddd"/>
-<text x="62" y="337.3" text-anchor="end">10</text>
-<line x1="70" y1="276.7" x2="690" y2="276.7" stroke="#ddd"/>
-<text x="62" y="280.7" text-anchor="end">20</text>
-<line x1="70" y1="220.0" x2="690" y2="220.0" stroke="#ddd"/>
-<text x="62" y="224.0" text-anchor="end">30</text>
-<line x1="70" y1="163.3" x2="690" y2="163.3" stroke="#ddd"/>
-<text x="62" y="167.3" text-anchor="end">40</text>
-<line x1="70" y1="106.7" x2="690" y2="106.7" stroke="#ddd"/>
-<text x="62" y="110.7" text-anchor="end">50</text>
+<text x="62" y="394.0" text-anchor="end">0.0</text>
+<line x1="70" y1="322.0" x2="690" y2="322.0" stroke="#ddd"/>
+<text x="62" y="326.0" text-anchor="end">0.2</text>
+<line x1="70" y1="254.0" x2="690" y2="254.0" stroke="#ddd"/>
+<text x="62" y="258.0" text-anchor="end">0.4</text>
+<line x1="70" y1="186.0" x2="690" y2="186.0" stroke="#ddd"/>
+<text x="62" y="190.0" text-anchor="end">0.6</text>
+<line x1="70" y1="118.0" x2="690" y2="118.0" stroke="#ddd"/>
+<text x="62" y="122.0" text-anchor="end">0.8</text>
 <line x1="70" y1="50.0" x2="690" y2="50.0" stroke="#ddd"/>
-<text x="62" y="54.0" text-anchor="end">60</text>
+<text x="62" y="54.0" text-anchor="end">1.0</text>
 <text x="70.0" y="410" text-anchor="middle">0.1</text>
 <text x="147.5" y="410" text-anchor="middle">0.2</text>
 <text x="225.0" y="410" text-anchor="middle">0.3</text>
@@ -27,17 +25,17 @@
 <line x1="70" y1="50" x2="70" y2="390" stroke="black"/>
 <line x1="70" y1="390" x2="690" y2="390" stroke="black"/>
 <text x="380.0" y="430" text-anchor="middle">load factor (alpha)</text>
-<text x="18" y="220.0" text-anchor="middle" transform="rotate(-90 18 220.0)">average probes</text>
-<polyline points="70.0,383.7 147.5,382.7 225.0,381.4 302.5,379.3 380.0,375.8 457.5,369.5 535.0,355.7 612.5,316.3 690.0,103.8" fill="none" stroke="#d62728" stroke-width="2" stroke-dasharray="6 4"/><circle cx="70.0" cy="383.7" r="3.5" fill="#d62728"/><circle cx="147.5" cy="382.7" r="3.5" fill="#d62728"/><circle cx="225.0" cy="381.4" r="3.5" fill="#d62728"/><circle cx="302.5" cy="379.3" r="3.5" fill="#d62728"/><circle cx="380.0" cy="375.8" r="3.5" fill="#d62728"/><circle cx="457.5" cy="369.5" r="3.5" fill="#d62728"/><circle cx="535.0" cy="355.7" r="3.5" fill="#d62728"/><circle cx="612.5" cy="316.3" r="3.5" fill="#d62728"/><circle cx="690.0" cy="103.8" r="3.5" fill="#d62728"/>
-<polyline points="70.0,383.7 147.5,382.7 225.0,381.4 302.5,379.2 380.0,375.8 457.5,369.7 535.0,355.6 612.5,321.5 690.0,150.6" fill="none" stroke="#d62728" stroke-width="2"/><circle cx="70.0" cy="383.7" r="3.5" fill="#d62728"/><circle cx="147.5" cy="382.7" r="3.5" fill="#d62728"/><circle cx="225.0" cy="381.4" r="3.5" fill="#d62728"/><circle cx="302.5" cy="379.2" r="3.5" fill="#d62728"/><circle cx="380.0" cy="375.8" r="3.5" fill="#d62728"/><circle cx="457.5" cy="369.7" r="3.5" fill="#d62728"/><circle cx="535.0" cy="355.6" r="3.5" fill="#d62728"/><circle cx="612.5" cy="321.5" r="3.5" fill="#d62728"/><circle cx="690.0" cy="150.6" r="3.5" fill="#d62728"/>
-<polyline points="70.0,384.0 147.5,383.6 225.0,383.1 302.5,382.4 380.0,381.5 457.5,380.1 535.0,377.7 612.5,373.0 690.0,358.8" fill="none" stroke="#1f77b4" stroke-width="2" stroke-dasharray="6 4"/><circle cx="70.0" cy="384.0" r="3.5" fill="#1f77b4"/><circle cx="147.5" cy="383.6" r="3.5" fill="#1f77b4"/><circle cx="225.0" cy="383.1" r="3.5" fill="#1f77b4"/><circle cx="302.5" cy="382.4" r="3.5" fill="#1f77b4"/><circle cx="380.0" cy="381.5" r="3.5" fill="#1f77b4"/><circle cx="457.5" cy="380.1" r="3.5" fill="#1f77b4"/><circle cx="535.0" cy="377.7" r="3.5" fill="#1f77b4"/><circle cx="612.5" cy="373.0" r="3.5" fill="#1f77b4"/><circle cx="690.0" cy="358.8" r="3.5" fill="#1f77b4"/>
-<polyline points="70.0,384.0 147.5,383.6 225.0,383.1 302.5,382.4 380.0,381.5 457.5,380.2 535.0,377.7 612.5,373.4 690.0,360.9" fill="none" stroke="#1f77b4" stroke-width="2"/><circle cx="70.0" cy="384.0" r="3.5" fill="#1f77b4"/><circle cx="147.5" cy="383.6" r="3.5" fill="#1f77b4"/><circle cx="225.0" cy="383.1" r="3.5" fill="#1f77b4"/><circle cx="302.5" cy="382.4" r="3.5" fill="#1f77b4"/><circle cx="380.0" cy="381.5" r="3.5" fill="#1f77b4"/><circle cx="457.5" cy="380.2" r="3.5" fill="#1f77b4"/><circle cx="535.0" cy="377.7" r="3.5" fill="#1f77b4"/><circle cx="612.5" cy="373.4" r="3.5" fill="#1f77b4"/><circle cx="690.0" cy="360.9" r="3.5" fill="#1f77b4"/>
+<text x="18" y="220.0" text-anchor="middle" transform="rotate(-90 18 220.0)">average key comparisons</text>
+<polyline points="70.0,356.0 147.5,322.0 225.0,288.0 302.5,254.0 380.0,220.0 457.5,186.0 535.0,152.0 612.5,118.0 690.0,84.0" fill="none" stroke="#d62728" stroke-width="2" stroke-dasharray="6 4"/><circle cx="70.0" cy="356.0" r="3.5" fill="#d62728"/><circle cx="147.5" cy="322.0" r="3.5" fill="#d62728"/><circle cx="225.0" cy="288.0" r="3.5" fill="#d62728"/><circle cx="302.5" cy="254.0" r="3.5" fill="#d62728"/><circle cx="380.0" cy="220.0" r="3.5" fill="#d62728"/><circle cx="457.5" cy="186.0" r="3.5" fill="#d62728"/><circle cx="535.0" cy="152.0" r="3.5" fill="#d62728"/><circle cx="612.5" cy="118.0" r="3.5" fill="#d62728"/><circle cx="690.0" cy="84.0" r="3.5" fill="#d62728"/>
+<polyline points="70.0,357.2 147.5,320.6 225.0,286.6 302.5,252.6 380.0,219.5 457.5,185.0 535.0,152.0 612.5,118.8 690.0,85.7" fill="none" stroke="#d62728" stroke-width="2"/><circle cx="70.0" cy="357.2" r="3.5" fill="#d62728"/><circle cx="147.5" cy="320.6" r="3.5" fill="#d62728"/><circle cx="225.0" cy="286.6" r="3.5" fill="#d62728"/><circle cx="302.5" cy="252.6" r="3.5" fill="#d62728"/><circle cx="380.0" cy="219.5" r="3.5" fill="#d62728"/><circle cx="457.5" cy="185.0" r="3.5" fill="#d62728"/><circle cx="535.0" cy="152.0" r="3.5" fill="#d62728"/><circle cx="612.5" cy="118.8" r="3.5" fill="#d62728"/><circle cx="690.0" cy="85.7" r="3.5" fill="#d62728"/>
+<polyline points="70.0,33.0 147.5,16.0 225.0,-1.0 302.5,-18.0 380.0,-35.0 457.5,-52.0 535.0,-69.0 612.5,-86.0 690.0,-103.0" fill="none" stroke="#1f77b4" stroke-width="2" stroke-dasharray="6 4"/><circle cx="70.0" cy="33.0" r="3.5" fill="#1f77b4"/><circle cx="147.5" cy="16.0" r="3.5" fill="#1f77b4"/><circle cx="225.0" cy="-1.0" r="3.5" fill="#1f77b4"/><circle cx="302.5" cy="-18.0" r="3.5" fill="#1f77b4"/><circle cx="380.0" cy="-35.0" r="3.5" fill="#1f77b4"/><circle cx="457.5" cy="-52.0" r="3.5" fill="#1f77b4"/><circle cx="535.0" cy="-69.0" r="3.5" fill="#1f77b4"/><circle cx="612.5" cy="-86.0" r="3.5" fill="#1f77b4"/><circle cx="690.0" cy="-103.0" r="3.5" fill="#1f77b4"/>
+<polyline points="70.0,32.8 147.5,15.4 225.0,-0.9 302.5,-18.5 380.0,-36.0 457.5,-50.8 535.0,-68.2 612.5,-85.9 690.0,-101.7" fill="none" stroke="#1f77b4" stroke-width="2"/><circle cx="70.0" cy="32.8" r="3.5" fill="#1f77b4"/><circle cx="147.5" cy="15.4" r="3.5" fill="#1f77b4"/><circle cx="225.0" cy="-0.9" r="3.5" fill="#1f77b4"/><circle cx="302.5" cy="-18.5" r="3.5" fill="#1f77b4"/><circle cx="380.0" cy="-36.0" r="3.5" fill="#1f77b4"/><circle cx="457.5" cy="-50.8" r="3.5" fill="#1f77b4"/><circle cx="535.0" cy="-68.2" r="3.5" fill="#1f77b4"/><circle cx="612.5" cy="-85.9" r="3.5" fill="#1f77b4"/><circle cx="690.0" cy="-101.7" r="3.5" fill="#1f77b4"/>
 <line x1="80" y1="448" x2="108" y2="448" stroke="#1f77b4" stroke-width="2"/>
 <text x="114" y="452">success (measured)</text>
 <line x1="240" y1="448" x2="268" y2="448" stroke="#1f77b4" stroke-width="2" stroke-dasharray="6 4"/>
-<text x="274" y="452">success (Knuth)</text>
+<text x="274" y="452">success (theory)</text>
 <line x1="400" y1="448" x2="428" y2="448" stroke="#d62728" stroke-width="2"/>
 <text x="434" y="452">failure (measured)</text>
 <line x1="560" y1="448" x2="588" y2="448" stroke="#d62728" stroke-width="2" stroke-dasharray="6 4"/>
-<text x="594" y="452">failure (Knuth)</text>
+<text x="594" y="452">failure (theory)</text>
 </svg>
