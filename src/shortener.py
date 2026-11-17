@@ -38,3 +38,7 @@ class Shortener:
     def expand(self, code: str) -> str:
         """Return the original url, or raise KeyError if the code is unknown."""
         return self._table.get(code)
+
+    def items(self):
+        """Return the stored short-code and original-URL pairs."""
+        return self._table.items()

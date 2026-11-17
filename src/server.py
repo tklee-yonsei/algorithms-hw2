@@ -32,7 +32,11 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
         scheme = forwarded_proto.split(",", 1)[0].strip().lower()
         if scheme not in ("http", "https"):
             scheme = "http"
-        host = self.headers.get("Host", "localhost:8000")
+        host = self.headers.get("X-Forwarded-Host")
+        if host:
+            host = host.split(",", 1)[0].strip()
+        else:
+            host = self.headers.get("Host", "localhost:8000")
         return f"{scheme}://{host}/r/{code}"
 
     def do_POST(self) -> None:
@@ -76,6 +80,10 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
             self._send_html(200, self._form_page())
             return
 
+        if path == "/list":
+            self._send_html(200, self._list_page())
+            return
+
         if not path.startswith("/r/"):
             self._send_text(404, "Not Found")
             return
@@ -101,7 +109,8 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
             "<input id=\"url\" name=\"url\" type=\"url\" required "
             "placeholder=\"https://example.com\"> "
             "<button type=\"submit\">줄이기</button>"
-            "</form></main></body></html>"
+            "</form><p><a href=\"/list\">단축 URL 전체 목록 보기</a></p>"
+            "</main></body></html>"
         )
 
     @staticmethod
@@ -112,7 +121,32 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
             "<title>짧은 링크</title><body><main>"
             "<h1>짧은 링크가 준비됐어요</h1>"
             f"<p><a href=\"{short_url}\">{short_url}</a></p>"
+            "<p><a href=\"/list\">단축 URL 전체 목록 보기</a></p>"
             "<p><a href=\"/\">다른 URL 줄이기</a></p>"
+            "</main></body></html>"
+        )
+
+    def _list_page(self) -> str:
+        rows = []
+        for code, original_url in self.server.shortener.items():
+            short_url = escape(self._short_url(code), quote=True)
+            escaped_original_url = escape(original_url)
+            rows.append(
+                f"<li><a href=\"{short_url}\">{short_url}</a>"
+                f" &rarr; <code>{escaped_original_url}</code></li>"
+            )
+
+        entries = (
+            "<ul>" + "".join(rows) + "</ul>"
+            if rows
+            else "<p>아직 단축한 URL이 없습니다.</p>"
+        )
+        return (
+            "<!doctype html><html lang=\"ko\"><meta charset=\"utf-8\">"
+            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+            "<title>단축 URL 목록</title><body><main>"
+            "<h1>단축 URL 전체 목록</h1>"
+            f"{entries}<p><a href=\"/\">돌아가기</a></p>"
             "</main></body></html>"
         )
 

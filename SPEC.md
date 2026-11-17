@@ -31,8 +31,9 @@
 ## 5. 웹 서버
 
 - 서버는 기본적으로 `http://localhost:8000`에서 실행한다.
-- `POST /shorten` 요청의 `text/plain` 본문에는 단축할 URL 하나를 담는다. 성공하면 `200 OK`와 요청의 호스트 및 프로토콜을 사용한 `/r/{code}` 링크를 평문으로 반환한다. 프록시가 `X-Forwarded-Proto`를 전달하면 링크에 해당 프로토콜을 사용하고, 없으면 `http`를 사용한다.
+- `POST /shorten` 요청의 `text/plain` 본문에는 단축할 URL 하나를 담는다. 성공하면 `200 OK`와 요청의 호스트 및 프로토콜을 사용한 `/r/{code}` 링크를 평문으로 반환한다. 프록시가 `X-Forwarded-Host`와 `X-Forwarded-Proto`를 전달하면 링크에 해당 값을 사용하고, 없으면 `Host` 헤더와 `http`를 사용한다.
 - `GET /r/{code}`는 코드가 있으면 `302 Found`와 원래 URL을 `Location` 헤더로 반환한다.
+- `GET /list`는 현재 프로세스에 저장된 짧은 URL과 원본 URL 전체를 보여준다.
 - URL 입력이 잘못되면 `400 Bad Request`, 코드가 없으면 `404 Not Found`를 반환한다.
 
 ## 6. 경계 사례
