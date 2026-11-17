@@ -1,6 +1,7 @@
 import http.client
 import threading
 import unittest
+from urllib.parse import urlencode
 
 from src.server import ShortenerHTTPServer
 
@@ -35,6 +36,46 @@ class ServerTests(unittest.TestCase):
         response = self.connection.getresponse()
         self.assertEqual(response.status, 302)
         self.assertEqual(response.getheader("Location"), original_url)
+
+    def test_homepage_form_shortens_and_redirects_using_forwarded_address(self):
+        self.connection.request("GET", "/")
+        response = self.connection.getresponse()
+        self.assertEqual(response.status, 200)
+        self.assertIn(b'<form action="/shorten" method="post">', response.read())
+
+        original_url = "https://example.com/from-form"
+        host = "shortener.example.test"
+        self.connection.request(
+            "POST",
+            "/shorten",
+            body=urlencode({"url": original_url}),
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Host": host,
+                "X-Forwarded-Proto": "https",
+            },
+        )
+        response = self.connection.getresponse()
+        self.assertEqual(response.status, 200)
+        short_url = "https://shortener.example.test/r/0"
+        self.assertIn(short_url.encode(), response.read())
+
+        self.connection.request("GET", "/r/0", headers={"Host": host})
+        response = self.connection.getresponse()
+        self.assertEqual(response.status, 302)
+        self.assertEqual(response.getheader("Location"), original_url)
+
+    def test_invalid_form_url_returns_html_bad_request(self):
+        self.connection.request(
+            "POST",
+            "/shorten",
+            body=urlencode({"url": "not a URL"}),
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        response = self.connection.getresponse()
+        self.assertEqual(response.status, 400)
+        self.assertTrue(response.getheader("Content-Type").startswith("text/html"))
+        self.assertIn("올바른 URL".encode(), response.read())
 
     def test_invalid_url_returns_bad_request(self):
         self.connection.request("POST", "/shorten", body=b"not a URL")
