@@ -158,5 +158,19 @@ class HashTableIterationTests(unittest.TestCase):
         self.assertEqual(sorted(items), sorted(expected.items()))
 
 
+class HashTableFixedSizeTests(unittest.TestCase):
+    def test_full_fixed_table_terminates(self):
+        table = HashTable(capacity=3, max_load=None)
+        for key in ("a", "b", "c"):
+            table.put(key, 1)
+        with self.assertRaises(OverflowError):
+            table.put("d", 1)
+        with self.assertRaises(KeyError):
+            table.get("d")
+        self.assertEqual(table.probe_count("d"), 3)
+        table.put("a", 2)
+        self.assertEqual(table.get("a"), 2)
+
+
 if __name__ == "__main__":
     unittest.main()
