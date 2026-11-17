@@ -21,27 +21,30 @@ def _validate_url(url: str) -> None:
 class Shortener:
     def __init__(self) -> None:
         self._table = HashTable()
+        self._codes = HashTable()
         self._next_id = 0
 
     def shorten(self, url: str) -> str:
         _validate_url(url)
 
-        for code, stored_url in self._table.items():
-            if stored_url == url:
-                return code
+        try:
+            return self._table.get(url)
+        except KeyError:
+            pass
 
         code = encode(self._next_id)
         self._next_id += 1
-        self._table.put(code, url)
+        self._table.put(url, code)
+        self._codes.put(code, url)
         return code
 
     def expand(self, code: str) -> str:
         """Return the original url, or raise KeyError if the code is unknown."""
-        return self._table.get(code)
+        return self._codes.get(code)
 
     def items(self):
         """Return the stored short-code and original-URL pairs."""
-        return self._table.items()
+        return self._codes.items()
 
     def table_snapshot(self):
         """Return the current capacity, item count, and indexed slots."""

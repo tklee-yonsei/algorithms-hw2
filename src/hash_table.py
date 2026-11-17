@@ -14,6 +14,16 @@ def horner_hash(key: str, capacity: int) -> int:
     return h
 
 
+def horner_hash_steps(key: str, capacity: int):
+    """Yield the previous hash, character, code point, and new hash per step."""
+    h = 0
+    for character in key:
+        previous = h
+        code_point = ord(character)
+        h = (h * 31 + code_point) % capacity
+        yield previous, character, code_point, h
+
+
 class _Node:
     def __init__(self, key: str, value, next_node: _Node | None = None) -> None:
         self.key = key
