@@ -68,7 +68,7 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
             self._send_html(200, self._result_page(short_url))
             return
 
-        self._send_text(200, f"http://localhost:8000/r/{code}")
+        self._send_text(200, self._short_url(code))
 
     def do_GET(self) -> None:
         path = urlsplit(self.path).path

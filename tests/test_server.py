@@ -25,12 +25,16 @@ class ServerTests(unittest.TestCase):
             "POST",
             "/shorten",
             body=original_url.encode("utf-8"),
-            headers={"Content-Type": "text/plain"},
+            headers={
+                "Content-Type": "text/plain",
+                "Host": "shortener.example.test",
+                "X-Forwarded-Proto": "https",
+            },
         )
         response = self.connection.getresponse()
         self.assertEqual(response.status, 200)
         short_url = response.read().decode("utf-8")
-        self.assertEqual(short_url, "http://localhost:8000/r/0")
+        self.assertEqual(short_url, "https://shortener.example.test/r/0")
 
         self.connection.request("GET", "/r/0")
         response = self.connection.getresponse()
