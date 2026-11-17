@@ -5,6 +5,7 @@ from html import escape
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qsl, urlsplit
 
+from src.hash_table import horner_hash_steps
 from src.shortener import Shortener
 
 
@@ -169,14 +170,25 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
                 continue
 
             chain_nodes = []
-            for code, original_url in entry:
+            for original_url, code in entry:
                 short_url = escape(self._short_url(code), quote=True)
                 escaped_original_url = escape(original_url)
+                calculation = " &rarr; ".join(
+                    escape(
+                        f"({previous} * 31 + ord({character!r})={code_point}) "
+                        f"% {capacity} = {result}"
+                    )
+                    for previous, character, code_point, result in horner_hash_steps(
+                        original_url, capacity
+                    )
+                )
                 chain_nodes.append(
                     "<span class=\"node\">"
-                    f"<code>{escape(code)}</code><br>"
+                    f"<code>URL 키: {escaped_original_url}</code><br>"
+                    f"<code>짧은 코드: {escape(code)}</code><br>"
                     f"<a href=\"{short_url}\">{short_url}</a><br>"
-                    f"<code>{escaped_original_url}</code>"
+                    f"<details><summary>해시 계산 (버킷 {index})</summary>"
+                    f"<code>{calculation}</code></details>"
                     "</span>"
                 )
             chain = " &rarr; ".join(chain_nodes) + " &rarr; NULL"
@@ -190,10 +202,13 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
             "<title>해시 테이블</title><body><main>"
             "<h1>현재 해시 테이블</h1>"
-            "<p>개별 체이닝 해시 테이블 · 각 버킷은 연결 리스트입니다.</p>"
+            "<p>입력한 원본 URL을 키로 호너 해시를 계산하고, 같은 버킷의 URL은 "
+            "연결 리스트로 저장하는 개별 체이닝 방식입니다.</p>"
+            "<p>각 문자마다 <code>h = (h * 31 + ord(문자)) % capacity</code>를 적용합니다.</p>"
+            "<p>짧은 코드 번호는 링크용 식별자이며 버킷 인덱스와는 별개입니다.</p>"
             f"<p>{size}개 항목 / {capacity}개 슬롯</p>"
             "<table><thead><tr><th>버킷 인덱스</th><th>체인 크기</th>"
-            "<th>연결된 키와 값</th></tr></thead><tbody>"
+            "<th>URL 키, 짧은 코드와 계산 근거</th></tr></thead><tbody>"
             f"{''.join(rows)}</tbody></table>"
             "<p><a href=\"/list\">단축 URL 전체 목록</a> | "
             "<a href=\"/\">돌아가기</a></p>"

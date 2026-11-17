@@ -3,6 +3,7 @@ import threading
 import unittest
 from urllib.parse import urlencode
 
+from src.hash_table import horner_hash
 from src.server import ShortenerHTTPServer
 
 
@@ -69,11 +70,13 @@ class ServerTests(unittest.TestCase):
         self.assertIn("https://example.com/second", page)
 
     def test_table_page_shows_buckets_and_collision_chains(self):
-        for index in range(11):
+        urls = ("https://example.com/a", "https://example.com/i")
+        self.assertEqual(horner_hash(urls[0], 8), horner_hash(urls[1], 8))
+        for url in urls:
             self.connection.request(
                 "POST",
                 "/shorten",
-                body=f"https://example.com/{index}".encode("utf-8"),
+                body=url.encode("utf-8"),
                 headers={"Content-Type": "text/plain"},
             )
             response = self.connection.getresponse()
@@ -84,15 +87,18 @@ class ServerTests(unittest.TestCase):
         response = self.connection.getresponse()
         self.assertEqual(response.status, 200)
         page = response.read().decode("utf-8")
-        self.assertIn("개별 체이닝 해시 테이블", page)
-        self.assertIn("각 버킷은 연결 리스트", page)
-        self.assertIn("11개 항목 / 16개 슬롯", page)
-        self.assertIn("<th scope=\"row\">0</th>", page)
-        self.assertIn("<th scope=\"row\">1</th>", page)
+        self.assertIn("개별 체이닝 방식입니다.", page)
+        self.assertIn("입력한 원본 URL을 키로 호너 해시를 계산", page)
+        self.assertIn("h = (h * 31 + ord(문자)) % capacity", page)
+        self.assertIn("2개 항목 / 8개 슬롯", page)
+        expected_bucket = horner_hash(urls[0], 8)
+        self.assertIn(f"<th scope=\"row\">{expected_bucket}</th>", page)
         self.assertIn("2개 노드", page)
-        self.assertIn("https://example.com/1", page)
-        self.assertIn("https://example.com/10", page)
-        self.assertIn("비어 있음", page)
+        self.assertIn("URL 키: https://example.com/a", page)
+        self.assertIn("URL 키: https://example.com/i", page)
+        self.assertIn("짧은 코드: 0", page)
+        self.assertIn("짧은 코드: 1", page)
+        self.assertIn("ord(", page)
 
     def test_homepage_form_shortens_and_redirects_using_forwarded_address(self):
         self.connection.request("GET", "/")

@@ -1,6 +1,6 @@
 import unittest
 
-from src.hash_table import HashTable, horner_hash
+from src.hash_table import HashTable, horner_hash, horner_hash_steps
 
 
 class HornerHashTests(unittest.TestCase):
@@ -15,6 +15,12 @@ class HornerHashTests(unittest.TestCase):
         for key in ("", "0", "zzzzzzzzzzzzzzzz", "ZZZZZZZZZZZZZZZZ"):
             with self.subTest(key=key):
                 self.assertTrue(0 <= horner_hash(key, 8) < 8)
+
+    def test_hash_steps_show_each_horner_calculation(self):
+        self.assertEqual(
+            list(horner_hash_steps("ab", 8)),
+            [(0, "a", 97, 1), (1, "b", 98, 1)],
+        )
 
 
 class HashTableBasicTests(unittest.TestCase):
