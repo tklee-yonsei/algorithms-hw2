@@ -1,4 +1,6 @@
-"""Open-addressing hash table with linear probing and a Horner string hash."""
+"""Separate-chaining hash table with a Horner string hash."""
+
+from __future__ import annotations
 
 _INITIAL_CAPACITY = 8
 _MAX_LOAD = 0.7
@@ -12,23 +14,29 @@ def horner_hash(key: str, capacity: int) -> int:
     return h
 
 
-class HashTable:
-    """Maps string keys to values. Entries cannot be deleted.
+class _Node:
+    def __init__(self, key: str, value, next_node: _Node | None = None) -> None:
+        self.key = key
+        self.value = value
+        self.next = next_node
 
-    With max_load=None the table never grows, so it can be filled up to its
-    capacity. Callers must not insert more entries than the capacity.
+
+class HashTable:
+    """Maps string keys to values using a linked list in each bucket.
+
+    With max_load=None the bucket array never grows.
     """
 
     def __init__(self, capacity: int = _INITIAL_CAPACITY, max_load: float | None = _MAX_LOAD) -> None:
         if capacity < 1:
             raise ValueError("capacity must be positive")
-        self._slots = [None] * capacity
+        self._buckets: list[_Node | None] = [None] * capacity
         self._size = 0
         self._max_load = max_load
 
     @property
     def capacity(self) -> int:
-        return len(self._slots)
+        return len(self._buckets)
 
     def __len__(self) -> int:
         return self._size
@@ -37,14 +45,15 @@ class HashTable:
         if not isinstance(key, str):
             raise TypeError("key must be a string")
 
-        index = self._find_slot(key)
-        if index == -1:
-            raise OverflowError("hash table is full")
-        if self._slots[index] is not None:
-            self._slots[index] = (key, value)
-            return
+        index = horner_hash(key, self.capacity)
+        node = self._buckets[index]
+        while node is not None:
+            if node.key == key:
+                node.value = value
+                return
+            node = node.next
 
-        self._slots[index] = (key, value)
+        self._buckets[index] = _Node(key, value, self._buckets[index])
         self._size += 1
         if self._max_load is not None and self._size > self.capacity * self._max_load:
             self._grow()
@@ -53,46 +62,45 @@ class HashTable:
         if not isinstance(key, str):
             raise KeyError(key)
 
-        index = self._find_slot(key)
-        entry = self._slots[index] if index != -1 else None
-        if entry is None:
-            raise KeyError(key)
-        return entry[1]
+        node = self._buckets[horner_hash(key, self.capacity)]
+        while node is not None:
+            if node.key == key:
+                return node.value
+            node = node.next
+        raise KeyError(key)
 
-    def probe_count(self, key: str) -> int:
-        """Return how many slots a lookup of key inspects.
-
-        A found key counts the slot holding it; a missing key counts the empty
-        slot that ends the search.
-        """
+    def comparison_count(self, key: str) -> int:
+        """Return the number of chain nodes inspected for a lookup."""
         index = horner_hash(key, self.capacity)
-        probes = 1
-        while probes < self.capacity and self._slots[index] is not None and self._slots[index][0] != key:
-            index = (index + 1) % self.capacity
-            probes += 1
-        return probes
+        comparisons = 0
+        node = self._buckets[index]
+        while node is not None:
+            comparisons += 1
+            if node.key == key:
+                return comparisons
+            node = node.next
+        return comparisons
 
     def items(self):
-        for entry in self._slots:
-            if entry is not None:
-                yield entry
+        for head in self._buckets:
+            node = head
+            while node is not None:
+                yield node.key, node.value
+                node = node.next
 
     def slots(self):
-        """Yield each slot's index and entry, including empty slots."""
-        for index, entry in enumerate(self._slots):
-            yield index, entry
-
-    def _find_slot(self, key: str) -> int:
-        """Return the slot holding key, or the empty slot where it belongs."""
-        index = horner_hash(key, self.capacity)
-        for _ in range(self.capacity):
-            if self._slots[index] is None or self._slots[index][0] == key:
-                return index
-            index = (index + 1) % self.capacity
-        return -1
+        """Yield each bucket index and its chain as key-value pairs."""
+        for index, head in enumerate(self._buckets):
+            chain = []
+            node = head
+            while node is not None:
+                chain.append((node.key, node.value))
+                node = node.next
+            yield index, tuple(chain)
 
     def _grow(self) -> None:
         old_entries = list(self.items())
-        self._slots = [None] * (self.capacity * 2)
+        self._buckets = [None] * (self.capacity * 2)
         for key, value in old_entries:
-            self._slots[self._find_slot(key)] = (key, value)
+            index = horner_hash(key, self.capacity)
+            self._buckets[index] = _Node(key, value, self._buckets[index])

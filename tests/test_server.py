@@ -68,12 +68,12 @@ class ServerTests(unittest.TestCase):
         self.assertIn("https://example.com/first", page)
         self.assertIn("https://example.com/second", page)
 
-    def test_table_page_shows_all_array_slots_and_entries(self):
-        for url in ("https://example.com/first", "https://example.com/second"):
+    def test_table_page_shows_buckets_and_collision_chains(self):
+        for index in range(11):
             self.connection.request(
                 "POST",
                 "/shorten",
-                body=url.encode("utf-8"),
+                body=f"https://example.com/{index}".encode("utf-8"),
                 headers={"Content-Type": "text/plain"},
             )
             response = self.connection.getresponse()
@@ -84,13 +84,14 @@ class ServerTests(unittest.TestCase):
         response = self.connection.getresponse()
         self.assertEqual(response.status, 200)
         page = response.read().decode("utf-8")
-        self.assertIn("배열 기반 해시 테이블", page)
-        self.assertIn("선형 탐사", page)
-        self.assertIn("2개 항목 / 8개 슬롯", page)
+        self.assertIn("개별 체이닝 해시 테이블", page)
+        self.assertIn("각 버킷은 연결 리스트", page)
+        self.assertIn("11개 항목 / 16개 슬롯", page)
         self.assertIn("<th scope=\"row\">0</th>", page)
         self.assertIn("<th scope=\"row\">1</th>", page)
-        self.assertIn("https://example.com/first", page)
-        self.assertIn("https://example.com/second", page)
+        self.assertIn("2개 노드", page)
+        self.assertIn("https://example.com/1", page)
+        self.assertIn("https://example.com/10", page)
         self.assertIn("비어 있음", page)
 
     def test_homepage_form_shortens_and_redirects_using_forwarded_address(self):

@@ -161,21 +161,28 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
         capacity, size, slots = self.server.shortener.table_snapshot()
         rows = []
         for index, entry in slots:
-            if entry is None:
+            if not entry:
                 rows.append(
                     f"<tr><th scope=\"row\">{index}</th>"
                     "<td class=\"empty\" colspan=\"2\">비어 있음</td></tr>"
                 )
                 continue
 
-            code, original_url = entry
-            short_url = escape(self._short_url(code), quote=True)
-            escaped_original_url = escape(original_url)
+            chain_nodes = []
+            for code, original_url in entry:
+                short_url = escape(self._short_url(code), quote=True)
+                escaped_original_url = escape(original_url)
+                chain_nodes.append(
+                    "<span class=\"node\">"
+                    f"<code>{escape(code)}</code><br>"
+                    f"<a href=\"{short_url}\">{short_url}</a><br>"
+                    f"<code>{escaped_original_url}</code>"
+                    "</span>"
+                )
+            chain = " &rarr; ".join(chain_nodes) + " &rarr; NULL"
             rows.append(
                 f"<tr><th scope=\"row\">{index}</th>"
-                f"<td><code>{escape(code)}</code></td>"
-                f"<td><a href=\"{short_url}\">{short_url}</a><br>"
-                f"<code>{escaped_original_url}</code></td></tr>"
+                f"<td>{len(entry)}개 노드</td><td>{chain}</td></tr>"
             )
 
         return (
@@ -183,17 +190,18 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
             "<title>해시 테이블</title><body><main>"
             "<h1>현재 해시 테이블</h1>"
-            "<p>배열 기반 해시 테이블 · 충돌은 선형 탐사로 처리합니다.</p>"
+            "<p>개별 체이닝 해시 테이블 · 각 버킷은 연결 리스트입니다.</p>"
             f"<p>{size}개 항목 / {capacity}개 슬롯</p>"
-            "<table><thead><tr><th>인덱스</th><th>상태</th>"
-            "<th>짧은 링크와 원본 URL</th></tr></thead><tbody>"
+            "<table><thead><tr><th>버킷 인덱스</th><th>체인 크기</th>"
+            "<th>연결된 키와 값</th></tr></thead><tbody>"
             f"{''.join(rows)}</tbody></table>"
             "<p><a href=\"/list\">단축 URL 전체 목록</a> | "
             "<a href=\"/\">돌아가기</a></p>"
             "</main><style>"
             "body{font-family:sans-serif;margin:2rem}table{border-collapse:collapse}"
-            "th,td{border:1px solid #999;padding:.5rem;text-align:left}"
-            "td.empty{color:#777}code{overflow-wrap:anywhere}"
+            "th,td{border:1px solid #999;padding:.5rem;text-align:left;vertical-align:top}"
+            "td.empty{color:#777}.node{display:inline-block;border:1px solid #777;"
+            "padding:.5rem;margin:.2rem;overflow-wrap:anywhere}code{overflow-wrap:anywhere}"
             "</style></body></html>"
         )
 

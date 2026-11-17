@@ -1,4 +1,4 @@
-"""Measures linear-probing cost against the load factor and compares it with Knuth.
+"""Measures separate-chaining cost against the load factor and its estimate.
 
 Run with `make experiment`. Writes experiments/results.csv and experiments/results.svg.
 """
@@ -22,12 +22,12 @@ CSV_PATH = os.path.join(HERE, "results.csv")
 SVG_PATH = os.path.join(HERE, "results.svg")
 
 
-def knuth_success(alpha: float) -> float:
-    return (1 + 1 / (1 - alpha)) / 2
+def chaining_success(alpha: float) -> float:
+    return 1 + alpha / 2
 
 
-def knuth_failure(alpha: float) -> float:
-    return (1 + 1 / (1 - alpha) ** 2) / 2
+def chaining_failure(alpha: float) -> float:
+    return alpha
 
 
 def random_url(rng: random.Random) -> str:
@@ -48,17 +48,16 @@ def run_trial(alpha: float, rng: random.Random) -> tuple[float, float]:
         if len(table) > before:
             stored.append(url)
 
-    success = sum(table.probe_count(url) for url in stored) / len(stored)
+    success = sum(table.comparison_count(url) for url in stored) / len(stored)
 
     failure_total = 0
     counted = 0
     while counted < MISSING_KEYS_PER_TRIAL:
         url = random_url(rng)
-        probes = table.probe_count(url)
-        # An absent key ends on an empty slot, so it is never found in the table.
+        comparisons = table.comparison_count(url)
         if _is_stored(table, url):
             continue
-        failure_total += probes
+        failure_total += comparisons
         counted += 1
     return success, failure_total / counted
 
@@ -82,18 +81,18 @@ def measure() -> list[dict]:
             {
                 "load_factor": alpha,
                 "success_measured": measured_success,
-                "success_knuth": knuth_success(alpha),
+                "success_theory": chaining_success(alpha),
                 "failure_measured": measured_failure,
-                "failure_knuth": knuth_failure(alpha),
+                "failure_theory": chaining_failure(alpha),
             }
         )
     return rows
 
 
 def write_csv(rows: list[dict]) -> None:
-    columns = ["load_factor", "success_measured", "success_knuth", "failure_measured", "failure_knuth"]
+    columns = ["load_factor", "success_measured", "success_theory", "failure_measured", "failure_theory"]
     with open(CSV_PATH, "w", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file)
+        writer = csv.writer(file, lineterminator="\n")
         writer.writerow(columns)
         for row in rows:
             writer.writerow([row["load_factor"]] + [f"{row[name]:.4f}" for name in columns[1:]])
@@ -101,13 +100,13 @@ def write_csv(rows: list[dict]) -> None:
 
 def print_table(rows: list[dict]) -> None:
     print(f"capacity={CAPACITY}, trials={TRIALS}, missing keys/trial={MISSING_KEYS_PER_TRIAL}, seed={SEED}")
-    print(f"{'alpha':>5} | {'success':>9} {'Knuth':>9} {'diff%':>7} | {'failure':>9} {'Knuth':>9} {'diff%':>7}")
+    print(f"{'alpha':>5} | {'success':>9} {'theory':>9} {'diff%':>7} | {'failure':>9} {'theory':>9} {'diff%':>7}")
     for row in rows:
-        success_diff = (row["success_measured"] / row["success_knuth"] - 1) * 100
-        failure_diff = (row["failure_measured"] / row["failure_knuth"] - 1) * 100
+        success_diff = (row["success_measured"] / row["success_theory"] - 1) * 100
+        failure_diff = (row["failure_measured"] / row["failure_theory"] - 1) * 100
         print(
-            f"{row['load_factor']:>5.1f} | {row['success_measured']:>9.3f} {row['success_knuth']:>9.3f} {success_diff:>+6.1f}% |"
-            f" {row['failure_measured']:>9.3f} {row['failure_knuth']:>9.3f} {failure_diff:>+6.1f}%"
+            f"{row['load_factor']:>5.1f} | {row['success_measured']:>9.3f} {row['success_theory']:>9.3f} {success_diff:>+6.1f}% |"
+            f" {row['failure_measured']:>9.3f} {row['failure_theory']:>9.3f} {failure_diff:>+6.1f}%"
         )
 
 
@@ -115,8 +114,8 @@ def write_svg(rows: list[dict]) -> None:
     width, height = 720, 460
     left, right, top, bottom = 70, 30, 50, 70
     plot_w, plot_h = width - left - right, height - top - bottom
-    y_max = max(max(row["failure_measured"], row["failure_knuth"]) for row in rows)
-    y_max = (int(y_max / 10) + 1) * 10
+    y_max = max(max(row["failure_measured"], row["failure_theory"]) for row in rows)
+    y_max = (int(y_max * 2) + 1) / 2
 
     def x(alpha: float) -> float:
         return left + (alpha - 0.1) / 0.8 * plot_w
@@ -138,11 +137,12 @@ def write_svg(rows: list[dict]) -> None:
         ' font-family="sans-serif" font-size="12">',
         f'<rect width="{width}" height="{height}" fill="white"/>',
         f'<text x="{width / 2}" y="28" text-anchor="middle" font-size="16">'
-        "Linear probing: average probes vs load factor</text>",
+        "Separate chaining: average comparisons vs load factor</text>",
     ]
-    for tick in range(0, y_max + 1, 10):
+    for tick_index in range(6):
+        tick = y_max * tick_index / 5
         parts.append(f'<line x1="{left}" y1="{y(tick):.1f}" x2="{width - right}" y2="{y(tick):.1f}" stroke="#ddd"/>')
-        parts.append(f'<text x="{left - 8}" y="{y(tick) + 4:.1f}" text-anchor="end">{tick}</text>')
+        parts.append(f'<text x="{left - 8}" y="{y(tick) + 4:.1f}" text-anchor="end">{tick:.1f}</text>')
     for row in rows:
         parts.append(
             f'<text x="{x(row["load_factor"]):.1f}" y="{top + plot_h + 20}" text-anchor="middle">'
@@ -153,17 +153,17 @@ def write_svg(rows: list[dict]) -> None:
         f'<line x1="{left}" y1="{top + plot_h}" x2="{width - right}" y2="{top + plot_h}" stroke="black"/>',
         f'<text x="{left + plot_w / 2}" y="{height - 30}" text-anchor="middle">load factor (alpha)</text>',
         f'<text x="18" y="{top + plot_h / 2}" text-anchor="middle" transform="rotate(-90 18 {top + plot_h / 2})">'
-        "average probes</text>",
-        line("failure_knuth", "#d62728", True),
+        "average key comparisons</text>",
+        line("failure_theory", "#d62728", True),
         line("failure_measured", "#d62728", False),
-        line("success_knuth", "#1f77b4", True),
+        line("success_theory", "#1f77b4", True),
         line("success_measured", "#1f77b4", False),
     ]
     legend = [
         ("success (measured)", "#1f77b4", False),
-        ("success (Knuth)", "#1f77b4", True),
+        ("success (theory)", "#1f77b4", True),
         ("failure (measured)", "#d62728", False),
-        ("failure (Knuth)", "#d62728", True),
+        ("failure (theory)", "#d62728", True),
     ]
     for index, (label, color, dashed) in enumerate(legend):
         lx = left + 10 + index * 160
