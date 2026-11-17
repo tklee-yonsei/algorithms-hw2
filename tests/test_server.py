@@ -27,8 +27,9 @@ class ServerTests(unittest.TestCase):
             body=original_url.encode("utf-8"),
             headers={
                 "Content-Type": "text/plain",
-                "Host": "shortener.example.test",
+                "Host": "localhost:8000",
                 "X-Forwarded-Proto": "https",
+                "X-Forwarded-Host": "shortener.example.test",
             },
         )
         response = self.connection.getresponse()
@@ -40,6 +41,32 @@ class ServerTests(unittest.TestCase):
         response = self.connection.getresponse()
         self.assertEqual(response.status, 302)
         self.assertEqual(response.getheader("Location"), original_url)
+
+    def test_list_shows_all_short_urls_with_forwarded_host(self):
+        host_headers = {
+            "Host": "localhost:8000",
+            "X-Forwarded-Proto": "https",
+            "X-Forwarded-Host": "shortener.example.test",
+        }
+        for url in ("https://example.com/first", "https://example.com/second"):
+            self.connection.request(
+                "POST",
+                "/shorten",
+                body=url.encode("utf-8"),
+                headers={"Content-Type": "text/plain", **host_headers},
+            )
+            response = self.connection.getresponse()
+            self.assertEqual(response.status, 200)
+            response.read()
+
+        self.connection.request("GET", "/list", headers=host_headers)
+        response = self.connection.getresponse()
+        self.assertEqual(response.status, 200)
+        page = response.read().decode("utf-8")
+        self.assertIn("https://shortener.example.test/r/0", page)
+        self.assertIn("https://shortener.example.test/r/1", page)
+        self.assertIn("https://example.com/first", page)
+        self.assertIn("https://example.com/second", page)
 
     def test_homepage_form_shortens_and_redirects_using_forwarded_address(self):
         self.connection.request("GET", "/")
