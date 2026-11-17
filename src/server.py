@@ -84,6 +84,10 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
             self._send_html(200, self._list_page())
             return
 
+        if path == "/table":
+            self._send_html(200, self._table_page())
+            return
+
         if not path.startswith("/r/"):
             self._send_text(404, "Not Found")
             return
@@ -109,7 +113,8 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
             "<input id=\"url\" name=\"url\" type=\"url\" required "
             "placeholder=\"https://example.com\"> "
             "<button type=\"submit\">줄이기</button>"
-            "</form><p><a href=\"/list\">단축 URL 전체 목록 보기</a></p>"
+            "</form><nav><a href=\"/list\">단축 URL 전체 목록 보기</a> | "
+            "<a href=\"/table\">해시 테이블 보기</a></nav>"
             "</main></body></html>"
         )
 
@@ -122,6 +127,7 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
             "<h1>짧은 링크가 준비됐어요</h1>"
             f"<p><a href=\"{short_url}\">{short_url}</a></p>"
             "<p><a href=\"/list\">단축 URL 전체 목록 보기</a></p>"
+            "<p><a href=\"/table\">해시 테이블 보기</a></p>"
             "<p><a href=\"/\">다른 URL 줄이기</a></p>"
             "</main></body></html>"
         )
@@ -146,8 +152,49 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
             "<title>단축 URL 목록</title><body><main>"
             "<h1>단축 URL 전체 목록</h1>"
-            f"{entries}<p><a href=\"/\">돌아가기</a></p>"
+            f"{entries}<p><a href=\"/table\">해시 테이블 보기</a></p>"
+            "<p><a href=\"/\">돌아가기</a></p>"
             "</main></body></html>"
+        )
+
+    def _table_page(self) -> str:
+        capacity, size, slots = self.server.shortener.table_snapshot()
+        rows = []
+        for index, entry in slots:
+            if entry is None:
+                rows.append(
+                    f"<tr><th scope=\"row\">{index}</th>"
+                    "<td class=\"empty\" colspan=\"2\">비어 있음</td></tr>"
+                )
+                continue
+
+            code, original_url = entry
+            short_url = escape(self._short_url(code), quote=True)
+            escaped_original_url = escape(original_url)
+            rows.append(
+                f"<tr><th scope=\"row\">{index}</th>"
+                f"<td><code>{escape(code)}</code></td>"
+                f"<td><a href=\"{short_url}\">{short_url}</a><br>"
+                f"<code>{escaped_original_url}</code></td></tr>"
+            )
+
+        return (
+            "<!doctype html><html lang=\"ko\"><meta charset=\"utf-8\">"
+            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+            "<title>해시 테이블</title><body><main>"
+            "<h1>현재 해시 테이블</h1>"
+            "<p>배열 기반 해시 테이블 · 충돌은 선형 탐사로 처리합니다.</p>"
+            f"<p>{size}개 항목 / {capacity}개 슬롯</p>"
+            "<table><thead><tr><th>인덱스</th><th>상태</th>"
+            "<th>짧은 링크와 원본 URL</th></tr></thead><tbody>"
+            f"{''.join(rows)}</tbody></table>"
+            "<p><a href=\"/list\">단축 URL 전체 목록</a> | "
+            "<a href=\"/\">돌아가기</a></p>"
+            "</main><style>"
+            "body{font-family:sans-serif;margin:2rem}table{border-collapse:collapse}"
+            "th,td{border:1px solid #999;padding:.5rem;text-align:left}"
+            "td.empty{color:#777}code{overflow-wrap:anywhere}"
+            "</style></body></html>"
         )
 
     @staticmethod
