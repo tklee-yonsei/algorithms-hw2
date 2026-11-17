@@ -77,6 +77,11 @@ class HashTable:
             if entry is not None:
                 yield entry
 
+    def slots(self):
+        """Yield each slot's index and entry, including empty slots."""
+        for index, entry in enumerate(self._slots):
+            yield index, entry
+
     def _find_slot(self, key: str) -> int:
         """Return the slot holding key, or the empty slot where it belongs."""
         index = horner_hash(key, self.capacity)

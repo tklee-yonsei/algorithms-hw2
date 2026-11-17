@@ -42,3 +42,7 @@ class Shortener:
     def items(self):
         """Return the stored short-code and original-URL pairs."""
         return self._table.items()
+
+    def table_snapshot(self):
+        """Return the current capacity, item count, and indexed slots."""
+        return self._table.capacity, len(self._table), tuple(self._table.slots())
